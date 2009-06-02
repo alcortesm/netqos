@@ -1,0 +1,64 @@
+.\" nroff source of netqos manpage
+.\" alcortes@it.uc3m.es 2009-06-02
+.\"
+.\" groff -man netqos.4 | col -b > netqos_manpage.txt
+.\" groff -man -Tps netqos.4 > netqos_manpage.ps
+.\" groff -man -Tps netqos.4 | ps2pdf - - > netqos_manpage.pdf
+.\" groff -man -Thtml netqos.4 > netqos_manpage.html
+.\"
+.TH NETQOS 4 2009-06-02 "Linux" "Linux Programmer's Manual"
+.SH NAME
+\fBnetqos\fP \- QoS publication virtual device
+.SH DESCRIPTION
+bla
+.LP
+blabla
+.SS Usage
+bla
+.LP
+blabla
+.SS Configuration
+If your system does not have
+\fI/dev/netqos\fP created already, you will
+have to create it by hand. It can be created with the following commands.
+Major and minor numbers are dynamically
+assigned by default when the module is loaded so you will need to
+use \fBlsmod\fP to ask the system about them:
+
+.nf
+    ; lsmod | grep netqos
+    netqos             254  0
+    ; mknod /dev/netqos c 254 0
+    ; chmod 664 /dev/netqos
+    ; chown root:root /dev/netqos
+.fi
+
+.SH EXAMPLES
+To set \fIeth0\fP as the preferred interface:
+
+.nf
+    ; echo -n -e "eth0\\0000" > /dev/netqos
+.fi
+
+To get the preferred interface:
+
+.nf
+    ; cat /dev/netqos ; echo
+    eth0
+.fi
+
+To indicate there is no preferred interface:
+
+.nf
+    ; echo -n -e "\\0000" > /dev/netqos
+.fi
+
+.SH FILES
+.I /dev/netqos
+.SH BUGS
+.LP
+None known. Email the author if you find any.
+.SH AUTHOR
+Alberto Cortes <alcortes@it.uc3m.es>.
+.SH "SEE ALSO"
+\fBnetdevice\fP(7), \fBwrite\fP(2), \fBlsmod\fP(8)

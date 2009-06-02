@@ -1,0 +1,23 @@
+#!/bin/sh
+module="netqos"
+device="netqos"
+group="root"
+mode="664"
+
+# invoke insmod with all arguments, using a pathname
+/sbin/insmod ./$module.ko $* || exit 1
+
+# remove stale nodes
+rm -f /dev/${device}
+
+# learn the dynamic major number allocated for the module
+major=`cat /proc/devices | egrep '^.* '$module'$' | sed 's/^ *//' | sed 's/ .*$//'`
+
+# create the device for the module
+mknod /dev/${device} c $major 0
+
+# give permissions and group
+chgrp $group /dev/${device}
+chmod $mode  /dev/${device}
+
+ls -la /dev/${device}

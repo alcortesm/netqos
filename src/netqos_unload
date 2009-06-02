@@ -1,0 +1,9 @@
+#!/bin/sh
+
+module="netqos"
+device="netqos"
+
+# remove stale nodes
+rm -f /dev/${device}
+
+/sbin/rmmod $module
