@@ -1,0 +1,28 @@
+Si quiero empezar a trabajar en el protatil:
+
+ ; cd ~/tmp
+ ; mount-git-repos
+ ; git clone file:///home/alcortes/mnt/git-repos/netqos
+ ; unmount-git-repos
+ ; cd netqos
+
+
+Para añadir los cambios en el repositorio principal:
+
+ ; cd
+ ; mount-git-repos
+ ; cd ~/mnt/git-repos/netqos
+
+ # añadimos un nuevo remote y nos bajamos los cambios
+ # para añadir el remote: git remote add raven file:///home/alcortes/local/git-cache/netqos
+ ; git fetch raven
+
+ # observamos los cambios
+ ; git log raven/master ^master
+
+ # cuando estamos contentos con los cambios hacemos merge
+ # git checkout master
+ ; git merge raven/master
+
+ ; cd
+ ; unmount-git-repos

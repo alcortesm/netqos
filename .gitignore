@@ -1,0 +1,16 @@
+# ignore vim swap files
+*swp
+
+# ignore module compilation subproducts
+src/.*.o.d
+src/.*.ko.cmd
+src/.*.mod.o.cmd
+src/.*.o.cmd
+src/.tmp_versions/
+src/.tmp_versions/*.mod
+src/Module.symvers
+src/*.ko
+src/*.mod.c
+src/*.mod.o
+src/*.o
+src/modules.order
