@@ -1,0 +1,114 @@
+alcortes@it.uc3m.es
+2009-06-02
+
+
+    1. Netqos
+
+Netqos is a virtual device for 2.6 linux kernels.
+
+
+
+    2. External data is needed to compile and test!
+
+That's right, you will need about 1,5 GB of external data to compile
+and test netqos the way I do it. Of course none of these external
+data is included in this distribution. You will have to get it
+yourself. That way I keep this distribution small and avoid the
+inclusion of external software.
+
+
+
+    2.1 What external data I need and how do I get it?
+
+To compile netqos you will need a full kernel source tree.
+
+To test netqos the way I do it, you will need an UML kernel
+and some root filesystems to boot it.
+
+I have write some scripts to help you/me to get all these things.
+They are under the extdata/ directory. You will need to edit the
+extdata/CONFIGUREME file before executing those scritps. Then just
+execute each of the scripts in alphanumerical order.
+
+If you are trying to compile an older kernel in some new distributions
+you will also need to copy /usr/include/sys/user.h to
+/usr/include/asm/user.h.
+
+
+
+    3. Kernel tree compilation
+
+The scripts to download and compile a kernel are:
+
+    extdata/00-download-kernel-tree.sh
+    extdata/01-compile-uml-kernel.sh
+
+To compile a 2.6 linux kernel module you will need a compiled linux
+kernel source tree. I'm going to use UML as the compilation architecture
+as the testing and debugging of the kernel module is safer and easier.
+
+When configuring the kernel compilation remember to adapt it to your
+CPU and to include hostfs support. Also remember to include all the
+debugging options you need; some of the following wil be usefull:
+
+CONFIG_DEBUG_KERNEL
+CONFIG_DEBUG_SLAB
+CONFIG_DEBUG_PAGEALLOC
+CONFIG_DEBUG_SPINLOCK
+CONFIG_DEBUG_SPINLOCK_SLEEP
+CONFIG_INIT_DEBUG
+CONFIG_DEBUG_INFO
+CONFIG_MAGIC_SYSRQ
+CONFIG_DEBUG_STACKOVERFLOW
+CONFIG_DEBUG_STACK_USAGE
+CONFIG_KALLSYMS
+CONFIG_IKCONFIG
+CONFIG_IKCONFIG_PROC
+CONFIG_ACPI_DEBUG
+CONFIG_DEBUG_DRIVER
+CONFIG_SCSI_CONSTANTS
+CONFIG_PROFILING
+
+See doc/uml-compilation.txt for instructions about how to compile
+such a kernel. If you edit the CONFIGUREME file and used my extdata/
+scripts to generate all the needed external data, you will only need
+to invoke "make" to compile the module.
+
+
+
+    4. Test the module
+
+    4.1 UML rootfs creation
+
+See doc/01-uml-rootfs-creation.txt for instruction about how to create
+the rootfs for the UML systems. If you used my extdata/ scripts you have
+already create a working rootfs.
+
+
+    4.2 Launch the rootfs
+
+Just launch it with the newly generated "rootfs/run-uml.sh". There is
+only one user "root" with no passwd.
+
+
+    4.3 Test the module
+
+You will find the module and the load and unload scripts at:
+
+/mnt/host-tmp/netqos.ko
+/mnt/host-tmp/netqos_load
+/mnt/host-tmp/netqos_unload
+
+Use one of the UML terminals to monitor kernels logs:
+
+; tail -f /var/log/kern.log | grep netqos
+
+Use the other terminal to play with the module:
+
+; cd /mnt/host-tmp
+; modinfo netqos.ko
+; netqos_load
+; echo -n "eth0" > /dev/netqos
+; cat /dev/netqos
+; netqos_unload
+

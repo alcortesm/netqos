@@ -1,0 +1,23 @@
+# All the external data will go under a single directory.
+# I suggest to keep this directory safe, as the full
+# proccess of getting all the data can take hours depending
+# on your internet connection and CPU power.
+# If unsure choose some non-existent dir un your account:
+EXTDATADIR=${HOME}/local/extdata/netqos
+
+# You should chose a linux version to work with, I suggest
+# the last stable vanilla version.
+# If unsure choose some recent 2.6 version:
+# KERNEL_VERSION=2.6.26
+KERNELVERSION=2.6.29.4
+
+# Debian version of the uml image
+# If unsure choose the most recent Debian version:
+# DISTRO=lenny
+DISTRO=lenny
+
+# Some important packages you will need in your uml image.
+# There will be no Xorg in the UML image.
+# If unsure say:
+# INCLUDE=ssh,less,udev,gcc,gdb,make
+INCLUDE=ssh,less,valgrind,udev,tshark,tcpdump,psmisc,gcc,gdb,make,strace
