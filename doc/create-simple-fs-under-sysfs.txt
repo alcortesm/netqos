@@ -1,0 +1,17 @@
+You have to build a kobject in the module.
+
+LDDv3 explains kobjects on chapter 14 "The Linux Device Model". But it
+a very basic introduction and it did not mention how to build sys/
+trees without a character or block device or how to implement poll()
+support for the driver.
+
+In "_linux-src_/Documentation/kobject.txt", there is a section about
+building simple /sys/ trees called "Creating "simple" kobjects
+" and explains kobject_create_and_add(), sysfs_create_file(),
+sysfs_create_group(). There is an explample of use at
+"_linux-src_/samples/kobject-example.c".
+
+Poll() supoort was not included in the sys/ until very late, see
+"Some upcoming sysfs enhancements" (2006-03-07) at
+
+    http://lwn.net/Articles/174660/
