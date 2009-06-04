@@ -14,15 +14,15 @@ Para añadir los cambios en el repositorio principal:
  ; cd ~/mnt/git-repos/netqos
 
  # añadimos un nuevo remote y nos bajamos los cambios
- # para añadir el remote: git remote add raven file:///home/alcortes/local/git-cache/netqos
- ; git fetch raven
+ # para añadir el remote: git remote add local file:///home/alcortes/local/git-cache/netqos
+ ; git fetch local
 
  # observamos los cambios
- ; git log raven/master ^master
+ ; git log local/master ^master
 
  # cuando estamos contentos con los cambios hacemos merge
  # git checkout master
- ; git merge raven/master
+ ; git merge local/master
 
  ; cd
  ; unmount-git-repos
