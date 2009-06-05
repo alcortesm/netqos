@@ -11,17 +11,13 @@ MODULE_AUTHOR("Alberto Cortes <alcortes@it.uc3m.es>");
 MODULE_VERSION(NETQOS_VERSION);
 
 /* declaration of attribute access functions */
-/* show() and store() are demultiplexers for the rest
- * using attr as the selector */
+/* show() and store() act as demultiplexers for other
+ * functions and use attr and kobj as the selectors */
 static ssize_t show(struct kobject *kobj,
         struct kobj_attribute *attr, char *buf);
 static ssize_t store(struct kobject *kobj,
         struct kobj_attribute *attr, const char *buf,
         size_t count);
-static ssize_t foo_show(char *buf);
-static ssize_t foo_store(const char *buf, size_t count);
-static ssize_t bar_show(char *buf);
-static ssize_t bar_store(const char *buf, size_t count);
 
 /* attributes */
 static struct kobj_attribute foo_attribute =
@@ -37,6 +33,32 @@ static struct attribute *attrs[] = {
 /* attributes' storage */
 static int foo;
 static int bar;
+
+static ssize_t
+foo_show(char *buf)
+{
+    return sprintf(buf, "%d\n", foo);
+}
+
+static ssize_t
+foo_store(const char *buf, size_t count)
+{
+    sscanf(buf, "%du", &foo);
+    return count;
+}
+
+static ssize_t
+bar_show(char *buf)
+{
+    return sprintf(buf, "%d\n", bar);
+}
+
+static ssize_t
+bar_store(const char *buf, size_t count)
+{
+    sscanf(buf, "%du", &bar);
+    return count;
+}
 
 /* definitions of attribute accesss functions */
 static ssize_t
@@ -66,32 +88,6 @@ store(struct kobject *kobj, struct kobj_attribute * attr,
     }
 }
 
-static ssize_t
-foo_show(char *buf)
-{
-    return sprintf(buf, "%d\n", foo);
-}
-
-static ssize_t
-foo_store(const char *buf, size_t count)
-{
-    sscanf(buf, "%du", &foo);
-    return count;
-}
-
-static ssize_t
-bar_show(char *buf)
-{
-    return sprintf(buf, "%d\n", bar);
-}
-
-static ssize_t
-bar_store(const char *buf, size_t count)
-{
-    sscanf(buf, "%du", &bar);
-    return count;
-}
-
 /* Unnamed attribute group; will put all attributes
  * directly under the kobject dir instead of creating
  * a subdir.
@@ -101,30 +97,68 @@ static struct attribute_group attr_group = {
 };
 
 static struct kobject *netqos_kobj;
-
+static struct kobject *figures_kobj;
+static struct kobject *ifaces_kobj;
 static int __init
-netqos_init(void)
+sysfs_build_tree(void)
 {
     int r;
-
-    printk(KERN_INFO "netqos init (API version %i)\n",
-            NETQOS_VERSION);
-
     /* Create a simple kobject called "netqos" under /sys/kernel
      * 
      * As this is a simple directory, no uevent will be sent to
      * userspace.
      */
     netqos_kobj = kobject_create_and_add("netqos", kernel_kobj);
-    if (!netqos_kobj)
-        return -ENOMEM;
+    if (!netqos_kobj) {
+        r = -ENOMEM;
+        goto err;
+    }
 
     /* Populate the directory with the attributes */
     r = sysfs_create_group(netqos_kobj, &attr_group);
     if (r)
-        kobject_put(netqos_kobj);
+        goto err_netqos_attr;
 
+    /* create "figures/" and "ifaces/" subdirs */
+    figures_kobj = kobject_create_and_add("figures", netqos_kobj);
+    if (!figures_kobj) {
+        r = -ENOMEM;
+        goto err_figures;
+    }
+    ifaces_kobj = kobject_create_and_add("ifaces", netqos_kobj);
+    if (!ifaces_kobj) {
+        r = -ENOMEM;
+        goto err_ifaces;
+    }
+
+    return 0;
+
+err_ifaces:
+    kobject_put(figures_kobj);
+err_figures:
+    sysfs_remove_group(netqos_kobj, &attr_group);
+err_netqos_attr:
+    kobject_put(netqos_kobj);
+err:
     return r;
+}
+
+static int __init
+netqos_init(void)
+{
+    printk(KERN_INFO "netqos init (API version %s)\n",
+            NETQOS_VERSION);
+
+    return sysfs_build_tree();
+}
+
+static void __exit
+sysfs_destroy_tree(void)
+{
+    kobject_put(figures_kobj);
+    kobject_put(ifaces_kobj);
+    sysfs_remove_group(netqos_kobj, &attr_group);
+    kobject_put(netqos_kobj);
 }
 
 static void __exit
@@ -132,7 +166,7 @@ netqos_exit(void)
 {
     printk(KERN_DEBUG "netqos exit\n");
 
-    kobject_put(netqos_kobj);
+    sysfs_destroy_tree();
     return;
 }
 
