@@ -1,0 +1,217 @@
+﻿# Netqos vio la luz a finales del 2006, como parte del proyecto EW1. Lo que
+# aquí se explica tiene como origen la sección 8 el entregable 3.2b de ese
+# proyecto.
+
+# En este texto, el término "Calidad de Servicio" o "CdS" no tiene su
+# significado habitual de "mecanismos de control de reservas de recursos" en
+# redes de paquetes, si no que se refiere a la calidad objetiva y subjetiva
+# alcanzable por servicios de transmisión de datos en esas redes.
+
+1. Netqos - Interfaz de publicación de medidas de calidad de servicio
+
+La interfaz de publicación de medidas de calidad de servicio cumple una doble
+taréa:
+
+    1. Almacena y recuerda las medidas de calidad de servicio que le
+       proporcionan las aplicaciones encargadas de medirlas.
+
+    2. Permite al resto de aplicaciones consultar dichas medidas.
+
+Esto permite que las aplicaciones que miden calidad de servicio y las
+aplicaciones que se benefician de estas medidas puedan estar completamente
+desacopladas. En este sentido esta interfaz implementa un servicio de
+almacenamiento y publicación de medidas de calidad de servicio.
+
+
+1.1 Servicios similares
+
+[todo]
+No tengo constancia de la existencia de ningún servicio similar en ningún
+sistema operativo.
+[/todo]
+
+
+1.2 Implementación del servicio
+
+1.2.1 ¿Espacio de kernel o espacio de usuario?
+
+Un servicio de estas características puede ser implementado como una aplicación
+en espacio de usuario como un driver en el kernel. En este caso concreto, se ha
+decidido implementar el servicio como un driver del kernel.
+
+Justificación: Las aplicaciones en espacio de usuario tienen la ventaja de
+tener un menor tiempo de desarrollo, sobre todo por que los fallos en la etapa
+de pruebas son menos dramáticos que un cuelgue del kernel. También pueden ser
+desarrolladas con la ayuda de librerías de terceros, que aligeran el
+desarrollo.
+
+Sin embargo, algunos servicios son especialmente cómodos de prestar desde el
+espacio del kernel, ya que está diseñado para servir de capa base y soporte de
+las aplicaciones; este es un modelo que se adapta bastante a la idea del
+servidor descrito en la sección 1.
+
+Trabajar en espacio de kernel también permite reutilizar APIs estándares y bien
+conocidos por los programadores de aplicaciones, lo que reduce el coste de
+adaptar las aplicaciones.
+
+Las máquinas virtuales y simuladores disminuyen notablemente el tiempo de
+desarrollo en espacio de kernel, ya que la fase de pruebas se lleva a cabo en
+la máquina virtual donde los cuelgues del kernel se resuelven rápida y
+sencillamente reiniciando la máquina virtual.
+
+La escasez de librerías para trabajar en espacio de kernel no ha sido un
+problema en este caso, ya que los algoritmos y APIs con los que se trabaja son
+extremadamente sencillos.
+
+
+1.2.2 API del servicio - sistema de ficheros
+
+Intentando evitar la tendencia actual de desarrollar nuevos APIs para cada
+nuevo servicio, netqos tiene forma de sistema de ficheros, en la más pura
+tradición de los sistemas UNIX.
+
+Toda la funcionalidad de netqos está disponible a través de open, close, read y
+write, llamadas al sistema bien conocidas y ampliamente utilizadas; no se
+necesitan nuevas librerías con las que enlazar y extremadamente portable entre
+arquitecturas y sistemas operativos. Adicionalmente, todas las aplicaciones ya
+existentes para manipular ficheros pueden ser utilizadas para manejar este
+nuevo servicio, lo que permite al usuario interactuar con el servicio desde la
+línea de comandos o mediante scripts.
+
+
+1.2.3 API orientado a eventos
+
+El API del sistema de ficheros está especialmente mal preparado para ofrecer un
+servicio orientado a eventos. Es importante ofrecer un API alternativo para
+complementar este debilidad.
+
+Las dos alternativas para ello son:
+
+    1. inotify - notificación de eventos del sistema de ficheros
+
+    2. netlinks sockets - interfaz de comunicación entre el kernel y las
+       aplicaciones
+
+[todo]
+Probablemente se usará netlinks sockets
+[/todo]
+
+
+1.3 Organización de la información
+
+Los detalles sobre como el servicio netqos organiza la información están
+todavía abiertos. La lista concreta de parámetros de calidad de servicio que va
+a manejar no está decidida. De hecho el servicio en si mismo es independiente
+de estos detalles.
+
+Se espera que la información proporcionada por este servicio sea utilizada por
+usuarios y aplicaciones de red en la toma de decisiones para la gestión del
+multihoming y la adaptación de las aplicaciones a las características de las
+redes disponibles.
+
+Para poder satisfacer a la variedad de aplicaciones y usos posibles, es
+conveniente incluir tanto medidas objetivas de CdS como valores subjetivos
+derivados de ellas.  Por ejemplo aplicaciones como VoIP o el streaming de video
+pueden beneficiarse de estas medidas figuras de mérito subjetivas.
+
+
+1.3.1 Interfaz a las aplicaciones
+
+Netqos tiene un directorio raíz que contiene varios directorios y ficheros. La
+siguiente figura muestra un esquema de los mismos:
+
+                       .
+                       |-- figures/
+                       |   |-- bw/
+                       |   |   |-- eth0
+                       |   |   |-- eth1
+                       |   |   |-- ...
+                       |   |   `-- preferred
+                       |   |-- delay/
+                       |   |   |-- eth0
+                       |   |   |-- eth1
+                       |   |   |-- ...
+                       |   |   `-- preferred
+                       |   |-- jitter/
+                       |   |   |-- eth0
+                       |   |   |-- eth1
+                       |   |   |-- ...
+                       |   |   `-- preferred
+                       |   `-- price/
+                       |       |-- eth0
+                       |       |-- eth1
+                       |       |-- ...
+                       |       `-- preferred
+                       |-- ifaces/
+                       |   |-- eth0/
+                       |   |   |-- bw
+                       |   |   |-- delay
+                       |   |   |-- jitter
+                       |   |   `-- price
+                       |   |-- eth1/
+                       |   |   |-- bw
+                       |   |   |-- delay
+                       |   |   |-- jitter
+                       |   |   `-- price
+                       |   |-- ...
+                       |   `-- preferred
+                       `-- version
+
+El fichero "version" contiene el número de versión del driver netqos.
+
+El directorio "figures/" contienen directorios para cada una de los parámetros
+y figuras de mérito de CdS ("figures/bw", "figures/price"...). Cada uno de
+estos directorios contiene un fichero por cada interfaz levantado en el sistema
+("figures/bw/eth0" por ejemplo) y un fichero preferred ("figures/bw/preferred"
+por ejemplo).
+
+Los ficheros nombrados como los interfaces contienen el valor del parámetro o
+figura de mérito para dicho interfaz o la cadena vacía si no hay datos sobre
+el. El fichero preferred contiene el nombre del interfaz preferido para
+aplicaciones con especial interés en ese parámetro o figura de mérito concreta.
+
+El directorio "ifaces/" contiene directorios para cada interfaz levantado,
+dentro de estos directorios existe un fichero para cada parámetro o figura de
+mérito soportada. Estos ficheros contienen el valor de dicho parámetro o figura
+de mérito para cada interfaz o la cadena vacía si no se tienen datos sobre el.
+
+El fichero "ifaces/preferred" contiene el nombre del interfaz preferido por las
+aplicaciones que no tienen un interés especial o concreto en ningún parámetro o
+figura de mérito.
+
+En caso de existir un interfaz llamado "preferred", será ignorado por netqos.
+
+
+1.3.2 Escritura en el sistema de ficheros
+
+Determinadas aplicaciones necesitan permisos de escritura en el sistema de
+ficheros que presenta netqos, a saber:
+
+    1. aplicaciones de medida de parámetros de QoS
+    2. aplicaciones de cálculo de figuras de mérito de QoS
+    3. aplicaciones implementadoras de políticas de QoS (¿que interfaz es el
+       preferido?)
+
+
+1.4 Consideraciones de usabilidad
+
+El sistema de ficheros netqos puede ser exportado sin problemas utilizando
+protocolos bien conocidos como NFS o samba. Esto puede utilizarse para la
+implementación distribuida de políticas o la gestión y monitorización de nodos
+lejanos.
+
+En sistemas linux modernos (versiones del kernel 2.6.X), el sistema de ficheros
+netqos puede ser implementado utilizando el interfaz de KObjects del kernel,
+para reproducir la jerarquía de ficheros bajo /sys.
+
+Ejemplos de uso:
+
+El usuario puede consultar del interfaz preferido mediante:
+
+    ; cat /sys/netqos/ifaces/preferred
+    eth0
+
+Un usuario con priviligios puede especificar el interfaz preferido mediante:
+
+    ; echo "eth1" > /sys/netqos/ifaces/preferred
+
