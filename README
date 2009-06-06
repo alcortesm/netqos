@@ -101,14 +101,13 @@ You will find the module and the load and unload scripts at:
 
 Use one of the UML terminals to monitor kernels logs:
 
-; tail -f /var/log/kern.log | grep netqos
+; tail -f /var/log/kern.log | egrep -v "IRQ 10/winch|Failed to open console|getmaster - no usable host pty"
 
 Use the other terminal to play with the module:
 
 ; cd /mnt/host-tmp
 ; modinfo netqos.ko
 ; netqos_load
-; echo -n "eth0" > /dev/netqos
-; cat /dev/netqos
+; cat /sys/kernel/netqos/version
 ; netqos_unload
 

@@ -18,8 +18,12 @@ static ssize_t show(struct kobject *kobj,
 static ssize_t store(struct kobject *kobj,
         struct kobj_attribute *attr, const char *buf,
         size_t count);
+static ssize_t version_show(struct kobject *kobj,
+        struct kobj_attribute *attr, char *buf);
 
 /* attributes */
+static struct kobj_attribute version_kobj_attr =
+    __ATTR_RO(version);
 static struct kobj_attribute foo_attribute =
     __ATTR(foo, 0666, show, store);
 static struct kobj_attribute bar_attribute =
@@ -33,6 +37,7 @@ static struct attribute *attrs[] = {
 /* attributes' storage */
 static int foo;
 static int bar;
+static char * version = NETQOS_VERSION;
 
 static ssize_t
 show_int(char *buf, int i)
@@ -47,6 +52,14 @@ store_int(const char *buf, size_t count, int *ip)
     return count;
 }
 
+static ssize_t
+version_show(struct kobject *kobj,
+        struct kobj_attribute *attr, char *buf)
+{
+    strcpy(buf, version);
+    return strlen(buf)+1;
+}
+
 /* definitions of attribute accesss functions */
 static ssize_t
 show(struct kobject *kobj, struct kobj_attribute *attr,
@@ -54,8 +67,7 @@ show(struct kobject *kobj, struct kobj_attribute *attr,
 {
     if (attr == &foo_attribute) {
         return show_int(buf, foo);
-    }
-    else if (attr == &bar_attribute) {
+    } else if (attr == &bar_attribute) {
         return show_int(buf, bar);
     } else {
         return -1;
@@ -102,6 +114,9 @@ sysfs_build_tree(void)
     }
 
     /* Populate the directory with the attributes */
+    r = sysfs_create_file(netqos_kobj, &version_kobj_attr.attr);
+    if (r)
+        goto err_version;
     r = sysfs_create_group(netqos_kobj, &attr_group);
     if (r)
         goto err_netqos_attr;
@@ -125,6 +140,8 @@ err_ifaces:
 err_figures:
     sysfs_remove_group(netqos_kobj, &attr_group);
 err_netqos_attr:
+    sysfs_remove_file(netqos_kobj, &version_kobj_attr.attr);
+err_version:
     kobject_put(netqos_kobj);
 err:
     return r;
@@ -145,6 +162,7 @@ sysfs_destroy_tree(void)
     kobject_put(figures_kobj);
     kobject_put(ifaces_kobj);
     sysfs_remove_group(netqos_kobj, &attr_group);
+    sysfs_remove_file(netqos_kobj, &version_kobj_attr.attr);
     kobject_put(netqos_kobj);
 }
 
