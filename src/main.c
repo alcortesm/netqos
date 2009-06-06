@@ -35,28 +35,15 @@ static int foo;
 static int bar;
 
 static ssize_t
-foo_show(char *buf)
+show_int(char *buf, int i)
 {
-    return sprintf(buf, "%d\n", foo);
+    return sprintf(buf, "%d\n", i);
 }
 
 static ssize_t
-foo_store(const char *buf, size_t count)
+store_int(const char *buf, size_t count, int *ip)
 {
-    sscanf(buf, "%du", &foo);
-    return count;
-}
-
-static ssize_t
-bar_show(char *buf)
-{
-    return sprintf(buf, "%d\n", bar);
-}
-
-static ssize_t
-bar_store(const char *buf, size_t count)
-{
-    sscanf(buf, "%du", &bar);
+    sscanf(buf, "%du", ip);
     return count;
 }
 
@@ -66,10 +53,10 @@ show(struct kobject *kobj, struct kobj_attribute *attr,
         char *buf)
 {
     if (attr == &foo_attribute) {
-        return foo_show(buf);
+        return show_int(buf, foo);
     }
     else if (attr == &bar_attribute) {
-        return bar_show(buf);
+        return show_int(buf, bar);
     } else {
         return -1;
     }
@@ -80,9 +67,9 @@ store(struct kobject *kobj, struct kobj_attribute * attr,
         const char *buf, size_t count)
 {
     if (attr == &foo_attribute) {
-        return foo_store(buf, count);
+        return store_int(buf, count, &foo);
     } else if (attr == &bar_attribute) {
-        return bar_store(buf, count);
+        return store_int(buf, count, &bar);
     } else {
         return -1;
     }
