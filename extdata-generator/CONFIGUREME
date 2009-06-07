@@ -20,4 +20,4 @@ DISTRO=lenny
 # There will be no Xorg in the UML image.
 # If unsure say:
 # INCLUDE=ssh,less,udev,gcc,gdb,make
-INCLUDE=ssh,less,valgrind,udev,tshark,tcpdump,psmisc,gcc,gdb,make,strace
+INCLUDE=ssh,less,valgrind,udev,tshark,tcpdump,psmisc,gcc,gdb,make,strace,tree

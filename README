@@ -105,9 +105,28 @@ Use one of the UML terminals to monitor kernels logs:
 
 Use the other terminal to play with the module:
 
-; cd /mnt/host-tmp
-; modinfo netqos.ko
-; netqos_load
-; cat /sys/kernel/netqos/version
-; netqos_unload
+client:~# cd /mnt/host-tmp
+client:/mnt/host-tmp# modinfo netqos.ko 
+filename:       netqos.ko
+version:        0.2
+author:         Alberto Cortes <alcortes@it.uc3m.es>
+license:        GPL
+srcversion:     E325E0C32CA0B0CEDE2D5BB
+depends:        
+vermagic:       2.6.29.4 mod_unload 
+client:/mnt/host-tmp# netqos_load
+client:/mnt/host-tmp# tree /sys/kernel/netqos/
+/sys/kernel/netqos/
+|-- figures
+|   |-- bw
+|   |-- delay
+|   |-- jitter
+|   `-- price
+|-- ifaces
+`-- version
+
+6 directories, 1 file
+client:/mnt/host-tmp# netqos_test 
+all tests OK
+client:/mnt/host-tmp# netqos_unload
 
