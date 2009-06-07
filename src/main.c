@@ -37,7 +37,6 @@ static struct attribute *attrs[] = {
 /* attributes' storage */
 static int foo;
 static int bar;
-static char * version = NETQOS_VERSION;
 
 static ssize_t
 show_int(char *buf, int i)
@@ -56,8 +55,7 @@ static ssize_t
 version_show(struct kobject *kobj,
         struct kobj_attribute *attr, char *buf)
 {
-    strcpy(buf, version);
-    return strlen(buf)+1;
+    return snprintf(buf, PAGE_SIZE, "%s\n", NETQOS_VERSION);
 }
 
 /* definitions of attribute accesss functions */

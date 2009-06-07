@@ -247,11 +247,13 @@ main(int argc, char ** argv)
         nr = read(fd, (void *)buf, bufsz);
         if (nr == -1)
             fatal("test 008 failed");
+        buf[nr-1] = '\0'; /* change \n into \0 */
         dprintn("nr = %d", nr);
         dprintn("bufsz = %d", bufsz);
         if (nr != bufsz)
             error("test 009 failed");
         dprintn("buf = %s", buf);
+        dprintn("NETQOS_VERSION = %s", NETQOS_VERSION);
         if (strncmp(buf, NETQOS_VERSION, bufsz))
             error("test 010 failed");
 
