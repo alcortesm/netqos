@@ -9,11 +9,15 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#define NETQOS_VERSION     "0.2"
-#define NETQOS_PATH        "/sys/kernel/netqos/"
-#define FIGURES_BASENAME   "figures"
-#define IFACES_BASENAME    "ifaces"
-#define VERSION_BASENAME   "version"
+#define NETQOS_VERSION      "0.2"
+#define NETQOS_PATH         "/sys/kernel/netqos/"
+#define FIGURES_BASENAME    "figures/"
+#define IFACES_BASENAME     "ifaces/"
+#define VERSION_BASENAME    "version"
+#define FIG_BW_BASENAME     "bw"
+#define FIG_DELAY_BASENAME  "delay"
+#define FIG_JITTER_BASENAME "jitter"
+#define FIG_PRICE_BASENAME  "price"
 
 char * argv0;
 int debug = 0;
@@ -148,6 +152,10 @@ main(int argc, char ** argv)
     char * figures_path;
     char * ifaces_path;
     char * version_path;
+    char * fig_bw_path;
+    char * fig_delay_path;
+    char * fig_jitter_path;
+    char * fig_price_path;
     {
         size_t bufsz;
         bufsz = (PATH_MAX+1)*sizeof(char);
@@ -180,6 +188,38 @@ main(int argc, char ** argv)
             error("version_path too long: %s", version_path);
         memset(buf, '\0', bufsz);
 
+        strcat(buf, NETQOS_PATH);
+        strcat(buf, FIGURES_BASENAME);
+        strcat(buf, FIG_BW_BASENAME);
+        fig_bw_path = xstrdup(buf);
+        if (strlen(fig_bw_path) > PATH_MAX)
+            error("fig_bw_path too long: %s", fig_bw_path);
+        memset(buf, '\0', bufsz);
+
+        strcat(buf, NETQOS_PATH);
+        strcat(buf, FIGURES_BASENAME);
+        strcat(buf, FIG_DELAY_BASENAME);
+        fig_delay_path = xstrdup(buf);
+        if (strlen(fig_delay_path) > PATH_MAX)
+            error("fig_delay_path too long: %s", fig_delay_path);
+        memset(buf, '\0', bufsz);
+
+        strcat(buf, NETQOS_PATH);
+        strcat(buf, FIGURES_BASENAME);
+        strcat(buf, FIG_JITTER_BASENAME);
+        fig_jitter_path = xstrdup(buf);
+        if (strlen(fig_jitter_path) > PATH_MAX)
+            error("fig_jitter_path too long: %s", fig_jitter_path);
+        memset(buf, '\0', bufsz);
+
+        strcat(buf, NETQOS_PATH);
+        strcat(buf, FIGURES_BASENAME);
+        strcat(buf, FIG_PRICE_BASENAME);
+        fig_price_path = xstrdup(buf);
+        if (strlen(fig_price_path) > PATH_MAX)
+            error("fig_price_path too long: %s", fig_price_path);
+        memset(buf, '\0', bufsz);
+
         free(buf);
     }
 
@@ -194,6 +234,7 @@ main(int argc, char ** argv)
     /* check if netqos main dir is present */
     {
         DIR * dirp;
+        dprintn("trying to open %s", netqos_path);
         dirp = opendir(netqos_path);
         if (!dirp)
             fatal("test 001 failed");
@@ -207,6 +248,7 @@ main(int argc, char ** argv)
     /* check if figures dir is present */
     {
         DIR * dirp;
+        dprintn("trying to open %s", figures_path);
         dirp = opendir(figures_path);
         if (!dirp)
             fatal("test 003 failed");
@@ -220,6 +262,7 @@ main(int argc, char ** argv)
     /* check if ifaces dir is present */
     {
         DIR * dirp;
+        dprintn("trying to open %s", ifaces_path);
         dirp = opendir(ifaces_path);
         if (!dirp)
             fatal("test 005 failed");
@@ -298,6 +341,62 @@ main(int argc, char ** argv)
         dprintn("calling \"%s\"", cmd);
         r = system(cmd);
         free(cmd);
+    }
+
+    /* check if figures/bw dir is present */
+    {
+        DIR * dirp;
+        dprintn("trying to open %s", fig_bw_path);
+        dirp = opendir(fig_bw_path);
+        if (!dirp)
+            fatal("test 016 failed");
+
+        int r;
+        r = closedir(dirp);
+        if (r)
+            fatal("test 017 failed");
+    }
+
+    /* check if figures/delay dir is present */
+    {
+        DIR * dirp;
+        dprintn("trying to open %s", fig_delay_path);
+        dirp = opendir(fig_delay_path);
+        if (!dirp)
+            fatal("test 018 failed");
+
+        int r;
+        r = closedir(dirp);
+        if (r)
+            fatal("test 019 failed");
+    }
+
+    /* check if figures/jitter dir is present */
+    {
+        DIR * dirp;
+        dprintn("trying to open %s", fig_jitter_path);
+        dirp = opendir(fig_jitter_path);
+        if (!dirp)
+            fatal("test 020 failed");
+
+        int r;
+        r = closedir(dirp);
+        if (r)
+            fatal("test 021 failed");
+    }
+
+    /* check if figures/price dir is present */
+    {
+        DIR * dirp;
+        dprintn("trying to open %s", fig_price_path);
+        dirp = opendir(fig_price_path);
+        if (!dirp)
+            fatal("test 022 failed");
+
+        int r;
+        r = closedir(dirp);
+        if (r)
+            fatal("test 023 failed");
     }
 
     free(netqos_path);
