@@ -11,8 +11,6 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Alberto Cortes <alcortes@it.uc3m.es>");
 MODULE_VERSION(NETQOS_VERSION);
 
-struct netqos_ifaces ifaces;
-
 static ssize_t
 version_show(struct kobject *kobj,
         struct kobj_attribute *attr, char *buf)
