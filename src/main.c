@@ -5,15 +5,24 @@
 #include <linux/sysfs.h>
 
 #include "netqos.h"
+#include "ifaces.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Alberto Cortes <alcortes@it.uc3m.es>");
 MODULE_VERSION(NETQOS_VERSION);
 
+struct netqos_ifaces ifaces;
+
 static ssize_t
 version_show(struct kobject *kobj,
         struct kobj_attribute *attr, char *buf)
 {
+    struct netqos_ifaces * ifaces;
+    
+    ifaces = netqos_ifaces_create(&init_net);
+    netqos_ifaces_print(ifaces);
+    netqos_ifaces_destroy(ifaces);
+
     return snprintf(buf, PAGE_SIZE, "%s\n", NETQOS_VERSION);
 }
 
@@ -101,7 +110,7 @@ err:
 static int __init
 netqos_init(void)
 {
-    printk(KERN_INFO "netqos init (API version %s)\n",
+    printk(KERN_INFO "netqos init (version %s)\n",
             NETQOS_VERSION);
 
     return sysfs_build_tree();
