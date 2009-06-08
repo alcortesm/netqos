@@ -10,14 +10,23 @@
 #include <unistd.h>
 
 #define NETQOS_VERSION      "0.2"
+#define BW_UNITS            "kbps"
+#define DELAY_UNITS         "ms"
+#define JITTER_UNITS        "ms"
+#define PRICE_UNITS         "Euros"
+
 #define NETQOS_PATH         "/sys/kernel/netqos/"
 #define FIGURES_BASENAME    "figures/"
 #define IFACES_BASENAME     "ifaces/"
 #define VERSION_BASENAME    "version"
-#define FIG_BW_BASENAME     "bw"
-#define FIG_DELAY_BASENAME  "delay"
-#define FIG_JITTER_BASENAME "jitter"
-#define FIG_PRICE_BASENAME  "price"
+#define FIG_BW_BASENAME     "bw/"
+#define FIG_DELAY_BASENAME  "delay/"
+#define FIG_JITTER_BASENAME "jitter/"
+#define FIG_PRICE_BASENAME  "price/"
+#define BW_UNITS_BASENAME     "units"
+#define DELAY_UNITS_BASENAME  "units"
+#define JITTER_UNITS_BASENAME "units"
+#define PRICE_UNITS_BASENAME  "units"
 
 char * argv0;
 int debug = 0;
@@ -151,11 +160,18 @@ main(int argc, char ** argv)
     char * netqos_path;
     char * figures_path;
     char * ifaces_path;
+
     char * version_path;
+
     char * fig_bw_path;
     char * fig_delay_path;
     char * fig_jitter_path;
     char * fig_price_path;
+
+    char * bw_units_path;
+    char * delay_units_path;
+    char * jitter_units_path;
+    char * price_units_path;
     {
         size_t bufsz;
         bufsz = (PATH_MAX+1)*sizeof(char);
@@ -218,6 +234,42 @@ main(int argc, char ** argv)
         fig_price_path = xstrdup(buf);
         if (strlen(fig_price_path) > PATH_MAX)
             error("fig_price_path too long: %s", fig_price_path);
+        memset(buf, '\0', bufsz);
+
+        strcat(buf, NETQOS_PATH);
+        strcat(buf, FIGURES_BASENAME);
+        strcat(buf, FIG_BW_BASENAME);
+        strcat(buf, BW_UNITS_BASENAME);
+        bw_units_path = xstrdup(buf);
+        if (strlen(bw_units_path) > PATH_MAX)
+            error("bw_units_path too long: %s", bw_units_path);
+        memset(buf, '\0', bufsz);
+
+        strcat(buf, NETQOS_PATH);
+        strcat(buf, FIGURES_BASENAME);
+        strcat(buf, FIG_DELAY_BASENAME);
+        strcat(buf, DELAY_UNITS_BASENAME);
+        delay_units_path = xstrdup(buf);
+        if (strlen(delay_units_path) > PATH_MAX)
+            error("delay_units_path too long: %s", delay_units_path);
+        memset(buf, '\0', bufsz);
+
+        strcat(buf, NETQOS_PATH);
+        strcat(buf, FIGURES_BASENAME);
+        strcat(buf, FIG_JITTER_BASENAME);
+        strcat(buf, JITTER_UNITS_BASENAME);
+        jitter_units_path = xstrdup(buf);
+        if (strlen(jitter_units_path) > PATH_MAX)
+            error("jitter_units_path too long: %s", jitter_units_path);
+        memset(buf, '\0', bufsz);
+
+        strcat(buf, NETQOS_PATH);
+        strcat(buf, FIGURES_BASENAME);
+        strcat(buf, FIG_PRICE_BASENAME);
+        strcat(buf, PRICE_UNITS_BASENAME);
+        price_units_path = xstrdup(buf);
+        if (strlen(price_units_path) > PATH_MAX)
+            error("price_units_path too long: %s", price_units_path);
         memset(buf, '\0', bufsz);
 
         free(buf);
@@ -283,7 +335,7 @@ main(int argc, char ** argv)
 
         /* read and compare to real version */
         size_t bufsz;
-        bufsz = strlen(NETQOS_VERSION) + 1; 
+        bufsz = strlen(NETQOS_VERSION) + 1;
         char * buf;
         buf = xmalloc(bufsz*sizeof(char));
         ssize_t nr;
@@ -399,6 +451,290 @@ main(int argc, char ** argv)
             fatal("test 023 failed");
     }
 
+    /* check bw units file */
+    {
+        /* open read only */
+        int fd;
+        fd = open(bw_units_path, O_RDONLY);
+        if (fd == -1)
+            fatal("test 024 failed");
+
+        /* read and compare to real bw_units */
+        size_t bufsz;
+        bufsz = strlen(BW_UNITS) + 1;
+        char * buf;
+        buf = xmalloc(bufsz*sizeof(char));
+        ssize_t nr;
+        nr = read(fd, (void *)buf, bufsz);
+        if (nr == -1)
+            fatal("test 025 failed");
+        buf[nr-1] = '\0'; /* change \n into \0 */
+        dprintn("nr = %d", nr);
+        dprintn("bufsz = %d", bufsz);
+        if (nr != bufsz)
+            error("test 026 failed");
+        dprintn("buf = %s", buf);
+        dprintn("BW_UNITS = %s", BW_UNITS);
+        if (strncmp(buf, BW_UNITS, bufsz))
+            error("test 027 failed");
+
+        free(buf);
+        close(fd);
+
+        /* open write only -> should fail */
+        fd = open(bw_units_path, O_WRONLY);
+        if (fd == -1) {
+            if (errno == EACCES)
+                dprintn("no write permissions to %s", bw_units_path);
+            else
+                fatal("test 028 failed");
+        } else {
+            dprintn("you have write permissions to %s!", bw_units_path);
+            error("test 029 failed");
+        }
+
+        /* change permissions and try to write -> should fail with EIO */
+        char * cmd;
+        cmd = xcalloc(PATH_MAX + strlen("chmod u+w "));
+        strcat(cmd, "chmod u+w ");
+        strcat(cmd, bw_units_path);
+        dprintn("calling \"%s\"", cmd);
+        int r;
+        r = system(cmd);
+        free(cmd);
+        fd = open(bw_units_path, O_WRONLY);
+        if (fd == -1)
+            fatal("test 030 failed");
+        ssize_t nw;
+        nw = write(fd, "hello", strlen("hello"));
+        if (nw != -1)
+            error("test 031 failed");
+        if (errno != EIO)
+            error("test 032 failed");
+        dprintn("write to bw_units file returned -EIO");
+        close(fd);
+        cmd = xcalloc(PATH_MAX + strlen("chmod u-w "));
+        strcat(cmd, "chmod u-w ");
+        strcat(cmd, bw_units_path);
+        dprintn("calling \"%s\"", cmd);
+        r = system(cmd);
+        free(cmd);
+    }
+
+    /* check delay units file */
+    {
+        /* open read only */
+        int fd;
+        fd = open(delay_units_path, O_RDONLY);
+        if (fd == -1)
+            fatal("test 033 failed");
+
+        /* read and compare to real delay_units */
+        size_t bufsz;
+        bufsz = strlen(DELAY_UNITS) + 1;
+        char * buf;
+        buf = xmalloc(bufsz*sizeof(char));
+        ssize_t nr;
+        nr = read(fd, (void *)buf, bufsz);
+        if (nr == -1)
+            fatal("test 034 failed");
+        buf[nr-1] = '\0'; /* change \n into \0 */
+        dprintn("nr = %d", nr);
+        dprintn("bufsz = %d", bufsz);
+        if (nr != bufsz)
+            error("test 035 failed");
+        dprintn("buf = %s", buf);
+        dprintn("DELAY_UNITS = %s", DELAY_UNITS);
+        if (strncmp(buf, DELAY_UNITS, bufsz))
+            error("test 036 failed");
+
+        free(buf);
+        close(fd);
+
+        /* open write only -> should fail */
+        fd = open(delay_units_path, O_WRONLY);
+        if (fd == -1) {
+            if (errno == EACCES)
+                dprintn("no write permissions to %s", delay_units_path);
+            else
+                fatal("test 037 failed");
+        } else {
+            dprintn("you have write permissions to %s!", delay_units_path);
+            error("test 038 failed");
+        }
+
+        /* change permissions and try to write -> should fail with EIO */
+        char * cmd;
+        cmd = xcalloc(PATH_MAX + strlen("chmod u+w "));
+        strcat(cmd, "chmod u+w ");
+        strcat(cmd, delay_units_path);
+        dprintn("calling \"%s\"", cmd);
+        int r;
+        r = system(cmd);
+        free(cmd);
+        fd = open(delay_units_path, O_WRONLY);
+        if (fd == -1)
+            fatal("test 039 failed");
+        ssize_t nw;
+        nw = write(fd, "hello", strlen("hello"));
+        if (nw != -1)
+            error("test 040 failed");
+        if (errno != EIO)
+            error("test 041 failed");
+        dprintn("write to delay_units file returned -EIO");
+        close(fd);
+        cmd = xcalloc(PATH_MAX + strlen("chmod u-w "));
+        strcat(cmd, "chmod u-w ");
+        strcat(cmd, delay_units_path);
+        dprintn("calling \"%s\"", cmd);
+        r = system(cmd);
+        free(cmd);
+    }
+
+    /* check jitter units file */
+    {
+        /* open read only */
+        int fd;
+        fd = open(jitter_units_path, O_RDONLY);
+        if (fd == -1)
+            fatal("test 042 failed");
+
+        /* read and compare to real jitter_units */
+        size_t bufsz;
+        bufsz = strlen(JITTER_UNITS) + 1;
+        char * buf;
+        buf = xmalloc(bufsz*sizeof(char));
+        ssize_t nr;
+        nr = read(fd, (void *)buf, bufsz);
+        if (nr == -1)
+            fatal("test 043 failed");
+        buf[nr-1] = '\0'; /* change \n into \0 */
+        dprintn("nr = %d", nr);
+        dprintn("bufsz = %d", bufsz);
+        if (nr != bufsz)
+            error("test 044 failed");
+        dprintn("buf = %s", buf);
+        dprintn("JITTER_UNITS = %s", JITTER_UNITS);
+        if (strncmp(buf, JITTER_UNITS, bufsz))
+            error("test 045 failed");
+
+        free(buf);
+        close(fd);
+
+        /* open write only -> should fail */
+        fd = open(jitter_units_path, O_WRONLY);
+        if (fd == -1) {
+            if (errno == EACCES)
+                dprintn("no write permissions to %s", jitter_units_path);
+            else
+                fatal("test 046 failed");
+        } else {
+            dprintn("you have write permissions to %s!", jitter_units_path);
+            error("test 047 failed");
+        }
+
+        /* change permissions and try to write -> should fail with EIO */
+        char * cmd;
+        cmd = xcalloc(PATH_MAX + strlen("chmod u+w "));
+        strcat(cmd, "chmod u+w ");
+        strcat(cmd, jitter_units_path);
+        dprintn("calling \"%s\"", cmd);
+        int r;
+        r = system(cmd);
+        free(cmd);
+        fd = open(jitter_units_path, O_WRONLY);
+        if (fd == -1)
+            fatal("test 048 failed");
+        ssize_t nw;
+        nw = write(fd, "hello", strlen("hello"));
+        if (nw != -1)
+            error("test 049 failed");
+        if (errno != EIO)
+            error("test 050 failed");
+        dprintn("write to jitter_units file returned -EIO");
+        close(fd);
+        cmd = xcalloc(PATH_MAX + strlen("chmod u-w "));
+        strcat(cmd, "chmod u-w ");
+        strcat(cmd, jitter_units_path);
+        dprintn("calling \"%s\"", cmd);
+        r = system(cmd);
+        free(cmd);
+    }
+
+    /* check price units file */
+    {
+        /* open read only */
+        int fd;
+        fd = open(price_units_path, O_RDONLY);
+        if (fd == -1)
+            fatal("test 051 failed");
+
+        /* read and compare to real price_units */
+        size_t bufsz;
+        bufsz = strlen(PRICE_UNITS) + 1;
+        char * buf;
+        buf = xmalloc(bufsz*sizeof(char));
+        ssize_t nr;
+        nr = read(fd, (void *)buf, bufsz);
+        if (nr == -1)
+            fatal("test 052 failed");
+        buf[nr-1] = '\0'; /* change \n into \0 */
+        dprintn("nr = %d", nr);
+        dprintn("bufsz = %d", bufsz);
+        if (nr != bufsz)
+            error("test 053 failed");
+        dprintn("buf = %s", buf);
+        dprintn("PRICE_UNITS = %s", PRICE_UNITS);
+        if (strncmp(buf, PRICE_UNITS, bufsz))
+            error("test 054 failed");
+
+        free(buf);
+        close(fd);
+
+        /* open write only -> should fail */
+        fd = open(price_units_path, O_WRONLY);
+        if (fd == -1) {
+            if (errno == EACCES)
+                dprintn("no write permissions to %s", price_units_path);
+            else
+                fatal("test 055 failed");
+        } else {
+            dprintn("you have write permissions to %s!", price_units_path);
+            error("test 056 failed");
+        }
+
+        /* change permissions and try to write -> should fail with EIO */
+        char * cmd;
+        cmd = xcalloc(PATH_MAX + strlen("chmod u+w "));
+        strcat(cmd, "chmod u+w ");
+        strcat(cmd, price_units_path);
+        dprintn("calling \"%s\"", cmd);
+        int r;
+        r = system(cmd);
+        free(cmd);
+        fd = open(price_units_path, O_WRONLY);
+        if (fd == -1)
+            fatal("test 057 failed");
+        ssize_t nw;
+        nw = write(fd, "hello", strlen("hello"));
+        if (nw != -1)
+            error("test 058 failed");
+        if (errno != EIO)
+            error("test 059 failed");
+        dprintn("write to price_units file returned -EIO");
+        close(fd);
+        cmd = xcalloc(PATH_MAX + strlen("chmod u-w "));
+        strcat(cmd, "chmod u-w ");
+        strcat(cmd, price_units_path);
+        dprintn("calling \"%s\"", cmd);
+        r = system(cmd);
+        free(cmd);
+    }
+
+    free(bw_units_path);
+    free(delay_units_path);
+    free(jitter_units_path);
+    free(price_units_path);
     free(netqos_path);
     free(figures_path);
     free(ifaces_path);
