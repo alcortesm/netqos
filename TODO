@@ -1,0 +1,7 @@
+- the network namespace to use to obtain iface names must be the one
+  of the calling process, but this could be difficult to implement
+  as diferent process will see different dirs and files then.
+
+- support dynamic interfaces: dirs and files should come and go
+
+- support poll()
