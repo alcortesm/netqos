@@ -12,7 +12,6 @@ MODULE_AUTHOR("Alberto Cortes <alcortes@it.uc3m.es>");
 MODULE_VERSION(NETQOS_VERSION);
 
 
-
 /*
  * show functions for read only fix string attributes
  */
@@ -67,7 +66,6 @@ static struct kobject *jitter_kobj;
 static struct kobject *price_kobj;
 
 
-
 static int __init
 sysfs_build_tree(void)
 {
@@ -117,7 +115,7 @@ sysfs_build_tree(void)
         goto err_ifaces;
     }
 
-    /* populate subdirs */
+    /* populate with units files */
     err = sysfs_create_file(bw_kobj, &bw_units_kobj_attr.attr);
     if (err)
         goto err_bw_units;
@@ -130,6 +128,9 @@ sysfs_build_tree(void)
     err = sysfs_create_file(price_kobj, &price_units_kobj_attr.attr);
     if (err)
         goto err_price_units;
+
+    /* ifaces files */
+
 
     return 0;
 
@@ -165,13 +166,7 @@ netqos_init(void)
     printk(KERN_INFO "netqos init (version %s)\n",
             NETQOS_VERSION);
 
-    {
-        struct netqos_ifaces * ifaces;
-    
-        ifaces = netqos_ifaces_create(&init_net);
-        netqos_ifaces_print(ifaces);
-        netqos_ifaces_destroy(ifaces);
-    }
+    ifaces = netqos_ifaces_create(&init_net);
 
     return sysfs_build_tree();
 }
@@ -194,7 +189,10 @@ netqos_exit(void)
 {
     printk(KERN_DEBUG "netqos exit\n");
 
+    destroy_init_ifaces(ifaces);
+
     sysfs_destroy_tree();
+
     return;
 }
 
