@@ -36,8 +36,8 @@ __NETQOS_ATTR_SHOW(price_units_show, NETQOS_PRICE_UNITS);
 static struct kobj_attribute version_kobj_attr =
     __ATTR_RO(version);
 
-/* __ATTR_RO for functions with different name than
- * the attribute name */
+/* __NETQOS_ATTR_RO is __ATTR_RO but for functions with
+ * different name than the attribute name */
 #define __NETQOS_ATTR_RO(_file_name, _func_name) { \
         .attr   = { .name = __stringify(_file_name), .mode = 0444 }, \
                 .show   = _func_name##_show,                 \
@@ -160,13 +160,15 @@ err_out:
     return err;
 }
 
+static struct ifaces * ifaces;
+
 static int __init
 netqos_init(void)
 {
     printk(KERN_INFO "netqos init (version %s)\n",
             NETQOS_VERSION);
 
-    ifaces = netqos_ifaces_create(&init_net);
+    ifaces = ifaces_create(&init_net);
 
     return sysfs_build_tree();
 }
@@ -189,7 +191,8 @@ netqos_exit(void)
 {
     printk(KERN_DEBUG "netqos exit\n");
 
-    destroy_init_ifaces(ifaces);
+    ifaces_print(ifaces);
+    ifaces_destroy(ifaces);
 
     sysfs_destroy_tree();
 
