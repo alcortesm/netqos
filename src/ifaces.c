@@ -3,13 +3,31 @@
 
 #include "ifaces.h"
 
+static unsigned long bw = 0;
+
+static ssize_t
+show(struct kobject * kobj, struct kobj_attribute * attr, char * buf)
+{
+    return snprintf(buf, PAGE_SIZE, "%lu\n", bw);
+}
+
+static ssize_t
+store(struct kobject * kobj, struct kobj_attribute * attr, 
+                     const char * buf, size_t count) 
+{
+    strict_strtoul(buf, 10, &bw);
+    return count;
+}
+
 void
 ifdata_init(struct ifdata * data, const char * name)
 {
     memcpy(data->name, name, IFNAMSIZ);
     data->bw            = 0;
-    data->bw_attr.name  = name;
-    data->bw_attr.mode  = 0666;
+    data->bw_kobj_attr.attr.name  = name;
+    data->bw_kobj_attr.attr.mode  = 0666;
+    data->bw_kobj_attr.show       = show;
+    data->bw_kobj_attr.store      = store;
     data->delay         = 0;
     data->delay_attr.name  = name;
     data->delay_attr.mode  = 0666;

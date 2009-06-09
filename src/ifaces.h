@@ -4,9 +4,10 @@
 #include <linux/netdevice.h>
 
 struct ifdata {
+    struct ifaces * ifaces;
     char name[IFNAMSIZ];
     int bw;
-    struct attribute bw_attr;
+    struct kobj_attribute bw_kobj_attr;
     int delay;
     struct attribute delay_attr;
     int jitter;

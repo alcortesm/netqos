@@ -11,6 +11,17 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Alberto Cortes <alcortes@it.uc3m.es>");
 MODULE_VERSION(NETQOS_VERSION);
 
+/*
+ * dirs
+ */
+static struct kobject *netqos_kobj;
+static struct kobject *figures_kobj;
+static struct kobject *ifaces_kobj;
+static struct kobject *bw_kobj;
+static struct kobject *delay_kobj;
+static struct kobject *jitter_kobj;
+static struct kobject *price_kobj;
+
 
 /*
  * show functions for read only fix string attributes
@@ -53,18 +64,44 @@ static struct kobj_attribute price_units_kobj_attr =
 
 
 
+static void
+sysfs_remove_ifaces_until(struct ifaces * ifaces, int count)
+{
+    int i;
+    struct ifdata * ifdata;
+    
+    for (i=0; i<count; i++) {
+        ifdata = ifaces->data+i;
+        sysfs_remove_file(bw_kobj, &ifdata->bw_kobj_attr.attr);
+    }
+    return;
+}
 
-/*
- * dirs
- */
-static struct kobject *netqos_kobj;
-static struct kobject *figures_kobj;
-static struct kobject *ifaces_kobj;
-static struct kobject *bw_kobj;
-static struct kobject *delay_kobj;
-static struct kobject *jitter_kobj;
-static struct kobject *price_kobj;
+static void
+sysfs_remove_ifaces(struct ifaces * ifaces)
+{
+    sysfs_remove_ifaces_until(ifaces, ifaces->count);
+    return;
+}
 
+
+static int __init
+sysfs_add_ifaces(struct ifaces * ifaces)
+{
+    int err;
+    int i;
+    struct ifdata * ifdata;
+
+    for (i=0; i<ifaces->count; i++) {
+        ifdata = ifaces->data+i;
+        err = sysfs_create_file(bw_kobj, &ifdata->bw_kobj_attr.attr);
+        if (err) {
+            sysfs_remove_ifaces_until(ifaces, i);
+            return err;
+        }
+    }
+    return 0;
+}
 
 static int __init
 sysfs_build_tree(void)
@@ -160,20 +197,7 @@ err_out:
     return err;
 }
 
-static struct ifaces * ifaces;
-
-static int __init
-netqos_init(void)
-{
-    printk(KERN_INFO "netqos init (version %s)\n",
-            NETQOS_VERSION);
-
-    ifaces = ifaces_create(&init_net);
-
-    return sysfs_build_tree();
-}
-
-static void __exit
+static void
 sysfs_destroy_tree(void)
 {
     kobject_put(price_kobj);
@@ -186,14 +210,46 @@ sysfs_destroy_tree(void)
     kobject_put(netqos_kobj);
 }
 
+static struct ifaces * ifaces;
+
+static int __init
+netqos_init(void)
+{
+    int err;
+    printk(KERN_INFO "netqos init (version %s)\n",
+            NETQOS_VERSION);
+
+    ifaces = ifaces_create(&init_net);
+    if (!ifaces) {
+        err = -ENOMEM;
+        goto err_out;
+    }
+
+    err = sysfs_build_tree();
+    if (err)
+        goto err_build_tree;
+
+    err = sysfs_add_ifaces(ifaces);
+    if (err)
+        goto err_add_ifaces;
+
+    return 0;
+
+err_add_ifaces:
+    sysfs_destroy_tree();
+err_build_tree:
+    ifaces_destroy(ifaces);
+err_out:
+    return err;
+}
+
 static void __exit
 netqos_exit(void)
 {
     printk(KERN_DEBUG "netqos exit\n");
 
-    ifaces_print(ifaces);
+    sysfs_remove_ifaces(ifaces);
     ifaces_destroy(ifaces);
-
     sysfs_destroy_tree();
 
     return;
