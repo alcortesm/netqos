@@ -15,6 +15,8 @@ install: default
 	cp netqos_load /tmp/
 	cp netqos_unload /tmp/
 	cp netqos_test /tmp/
+	cp netqos_read /tmp/
+	cp netqos_write /tmp/
 	cp netqos_watch /tmp/
 	mkdir -p ${HOME}/man/man4/
 	cp netqos.4  ${HOME}/man/man4/
@@ -35,8 +37,20 @@ else
     KERNELDIR ?= $(modulesdir)
     PWD := $(shell pwd)
 
-default: netqos_test netqos_watch
+default: netqos_test netqos_watch netqos_read netqos_write
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) ARCH=um modules
+
+netqos_write: write.o
+	$(CC) -Wall -g -o netqos_write write.o
+
+write.o: write.c
+	$(CC) -Wall -g -c write.c
+
+netqos_read: read.o
+	$(CC) -Wall -g -o netqos_read read.o
+
+read.o: read.c
+	$(CC) -Wall -g -c read.c
 
 netqos_test: test.o
 	$(CC) -Wall -g -o netqos_test test.o

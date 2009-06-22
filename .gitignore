@@ -15,4 +15,6 @@ src/*.mod.o
 src/*.o
 src/modules.order
 src/netqos_test
+src/netqos_read
+src/netqos_write
 src/netqos_watch
